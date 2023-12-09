@@ -147,16 +147,17 @@ int main(int argc, char **argv) {
 
   int factorial_part = k / servers_num;
   uint64_t result = 1;
-  int* sck = malloc(sizeof(int) * servers_num);
+  int* sck = malloc(sizeof(int) * servers_num);//Выделяется память для массива сокетов `sck`.
 
   // TODO: work continiously, rewrite to make parallel
+  // цикл для подключения к каждому серверу последовательно.
   for (int i = 0; i < servers_num; i++) {
     struct hostent *hostname = gethostbyname(to[i].ip);
     if (hostname == NULL) {
       fprintf(stderr, "gethostbyname failed with %s\n", to[i].ip);
       exit(1);
     }
-
+    //структура `sockaddr_in` с информацией о сервере.
     struct sockaddr_in server;
     server.sin_family = AF_INET;
     server.sin_port = htons(to[i].port);
@@ -195,11 +196,13 @@ int main(int argc, char **argv) {
     memcpy(task + sizeof(uint64_t), &end, sizeof(uint64_t));
     memcpy(task + 2 * sizeof(uint64_t), &mod, sizeof(uint64_t));
 
+    //Отправляется сообщение `task` серверу с помощью функции `send`.
     if (send(sck, task, sizeof(task), 0) < 0) {
       fprintf(stderr, "Send failed\n");
       exit(1);
     }
 
+    //Получается ответ от сервера с помощью функции `recv`
     char response[sizeof(uint64_t)];
     if (recv(sck, response, sizeof(response), 0) < 0) {
       fprintf(stderr, "Recieve failed\n");

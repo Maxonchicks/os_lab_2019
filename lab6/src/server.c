@@ -32,7 +32,6 @@ uint64_t Factorial(const struct FactorialArgs *args) {
 
   pthread_mutex_lock(&mut);
   for (int i = start; i <= end; i++) {
-    //ans *= i;
     ans = MultModulo(ans, i, mod);
   }
   pthread_mutex_unlock(&mut);
@@ -113,7 +112,7 @@ int main(int argc, char **argv) {
   server.sin_addr.s_addr = htonl(INADDR_ANY);
 
   int opt_val = 1;
-  setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt_val, sizeof(opt_val));
+  setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt_val, sizeof(opt_val));// Устанавливается опция `SO_REUSEADDR`, чтобы сокет можно было переиспользовать сразу после закрытия.
 
   int err = bind(server_fd, (struct sockaddr *)&server, sizeof(server));
   if (err < 0) {
@@ -132,7 +131,7 @@ int main(int argc, char **argv) {
   while (true) {
     struct sockaddr_in client;
     socklen_t client_len = sizeof(client);
-    int client_fd = accept(server_fd, (struct sockaddr *)&client, &client_len);
+    int client_fd = accept(server_fd, (struct sockaddr *)&client, &client_len);//Принимается новое подключение от клиента, создается новый сокет для взаимодействия с клиентом (`client_fd`).
 
     if (client_fd < 0) {
       fprintf(stderr, "Could not establish new connection\n");
@@ -155,7 +154,7 @@ int main(int argc, char **argv) {
         break;
       }
 
-      pthread_t threads[tnum];
+      pthread_t threads[tnum]; //Создается массив потоков `threads[tnum]` для параллельного выполнения вычислений факториала.
 
       uint64_t begin = 0;
       uint64_t end = 0;
