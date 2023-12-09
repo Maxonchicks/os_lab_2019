@@ -215,7 +215,7 @@ int main(int argc, char **argv) {
 
     close(sck);
   }
-  printf("answer: %llu\n", result);
+  printf("answer: %lu\n", result);
   free(to);
 
   return 0;

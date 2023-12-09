@@ -30,6 +30,13 @@ uint64_t Factorial(const struct FactorialArgs *args) {
   int end = args->end;
   int mod = args->mod;
 
+  pthread_mutex_lock(&mut);
+  for (int i = start; i <= end; i++) {
+    //ans *= i;
+    ans = MultModulo(ans, i, mod);
+  }
+  pthread_mutex_unlock(&mut);
+
   return ans;
 }
 
@@ -157,9 +164,10 @@ int main(int argc, char **argv) {
       memcpy(&end, from_client + sizeof(uint64_t), sizeof(uint64_t));
       memcpy(&mod, from_client + 2 * sizeof(uint64_t), sizeof(uint64_t));
 
-      fprintf(stdout, "Receive: %llu %llu %llu\n", begin, end, mod);
+      fprintf(stdout, "Receive: %lu %lu %lu\n", begin, end, mod);
 
       struct FactorialArgs args[tnum];
+      int factorial_part = (end - begin) / tnum;
       for (uint32_t i = 0; i < tnum; i++) {
         // TODO: parallel somehow
         // args[i].begin = 1;
@@ -193,7 +201,8 @@ int main(int argc, char **argv) {
         total = MultModulo(total, result, mod);
       }
 
-      printf("Total: %llu\n", total);
+      // printf("Total: %llu\n", total);
+      printf("port: %d -> Total: %lu\n", port, total);
 
       char buffer[sizeof(total)];
       memcpy(buffer, &total, sizeof(total));
