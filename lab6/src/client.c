@@ -18,6 +18,17 @@ struct Server {
   int port;
 };
 
+bool is_file_exist(const char *fileName)
+{
+  FILE *file;
+  if (file = fopen(fileName, "r")) {
+      fclose(file);
+      return true;
+  } else {
+      return false;
+  }   
+}
+
 bool ConvertStringToUI64(const char *str, uint64_t *val) {
   char *end = NULL;
   unsigned long long i = strtoull(str, &end, 10);
@@ -36,7 +47,7 @@ bool ConvertStringToUI64(const char *str, uint64_t *val) {
 int main(int argc, char **argv) {
   uint64_t k = -1;
   uint64_t mod = -1;
-  char servers[255] = {'\0'}; // TODO: explain why 255
+  char servers[255] = {'\0'}; // TODO: explain why 255 // max length of UTF-8 filename in UNIX
 
   while (true) {
     int current_optind = optind ? optind : 1;
@@ -58,14 +69,33 @@ int main(int argc, char **argv) {
       case 0:
         ConvertStringToUI64(optarg, &k);
         // TODO: your code here
+        if (k <= 0)
+          {
+            printf("Invalid arguments (k)!\n");
+            exit(EXIT_FAILURE);
+          }
         break;
       case 1:
         ConvertStringToUI64(optarg, &mod);
         // TODO: your code here
+        if (mod <= 0)
+          {
+            printf("Invalid arguments (mod)!\n");
+            exit(EXIT_FAILURE);
+          }
         break;
       case 2:
         // TODO: your code here
-        memcpy(servers, optarg, strlen(optarg));
+        // memcpy(servers, optarg, strlen(optarg));
+        if (is_file_exist(optarg))
+        {
+          memcpy(servers, optarg, strlen(optarg));
+        }
+        else
+        {
+          printf("Invalid arguments (servers)!\n");
+          exit(EXIT_FAILURE);
+        }    
         break;
       default:
         printf("Index %d is out of options\n", option_index);
@@ -86,12 +116,38 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  // TODO: for one server here, rewrite with servers from file
-  unsigned int servers_num = 1;
+  // // TODO: for one server here, rewrite with servers from file
+  // unsigned int servers_num = 1;
+  // struct Server *to = malloc(sizeof(struct Server) * servers_num);
+  // // TODO: delete this and parallel work between servers
+  // to[0].port = 20001;
+  // memcpy(to[0].ip, "127.0.0.1", sizeof("127.0.0.1"));
+
+  unsigned int servers_num = 0;
+  FILE* fp;
+  fp = fopen(servers, "r");
+  while (!feof(fp))
+  {
+    char test1[255];
+    char test2[255];
+    fscanf(fp, "%s : %s\n", test1, test2);
+    servers_num++;
+  }
   struct Server *to = malloc(sizeof(struct Server) * servers_num);
-  // TODO: delete this and parallel work between servers
-  to[0].port = 20001;
-  memcpy(to[0].ip, "127.0.0.1", sizeof("127.0.0.1"));
+  fseek(fp, 0L, SEEK_SET);
+
+  int index = 0;
+  while (!feof(fp))
+  {
+    fscanf(fp, "%s : %d\n", to[index].ip, &to[index].port);
+    printf("ip: %s, port: %d\n", to[index].ip, to[index].port);
+    index++;
+  }
+  fclose(fp);
+
+  int factorial_part = k / servers_num;
+  uint64_t result = 1;
+  int* sck = malloc(sizeof(int) * servers_num);
 
   // TODO: work continiously, rewrite to make parallel
   for (int i = 0; i < servers_num; i++) {
@@ -119,8 +175,20 @@ int main(int argc, char **argv) {
 
     // TODO: for one server
     // parallel between servers
-    uint64_t begin = 1;
-    uint64_t end = k;
+    // uint64_t begin = 1;
+    // uint64_t end = k;
+
+    uint64_t begin = (i*factorial_part) + 1;
+    uint64_t end;
+    if (i != servers_num - 1) 
+    {
+      end = (i + 1)*factorial_part;
+    }
+    else 
+    {
+      end = k;
+    }
+
 
     char task[sizeof(uint64_t) * 3];
     memcpy(task, &begin, sizeof(uint64_t));
@@ -142,10 +210,12 @@ int main(int argc, char **argv) {
     // unite results
     uint64_t answer = 0;
     memcpy(&answer, response, sizeof(uint64_t));
-    printf("answer: %llu\n", answer);
+    result = MultModulo(result, answer, mod);
+    // printf("answer: %llu\n", answer);
 
     close(sck);
   }
+  printf("answer: %llu\n", result);
   free(to);
 
   return 0;
